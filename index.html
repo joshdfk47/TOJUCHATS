@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOJUCHATS - Consultor Inteligente</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="data.js"></script>
+    <style>
+        :root {
+            --primary: #004d99;
+            --primary-light: #0073e6;
+            --accent: #00c2ff;
+            --bg-dark: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        /* Header */
+        header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 0 20px rgba(0, 194, 255, 0.3);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            background: var(--glass);
+            padding: 6px 12px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Chat Area */
+        #chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--glass-border) transparent;
+        }
+
+        #chat-window::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chat-window::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 10px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 20px 24px;
+            border-radius: 24px;
+            line-height: 1.7;
+            font-size: 1.05rem;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            color: var(--text-main);
+            margin-bottom: 24px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bot-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 15px 35px -5px rgba(0, 77, 153, 0.4);
+        }
+
+        .source-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            margin-top: 8px;
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            background: rgba(0, 194, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 194, 255, 0.2);
+            transition: all 0.2s;
+        }
+
+        .source-tag:hover {
+            background: rgba(0, 194, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* Input Area */
+        footer {
+            padding: 24px 32px;
+            border-top: 1px solid var(--glass-border);
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        input {
+            flex: 1;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 14px 20px;
+            border-radius: 14px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary-light);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(0, 115, 230, 0.2);
+        }
+
+        button#send-btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button#send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 115, 230, 0.4);
+        }
+
+        button#send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Hero Banner Styles */
+        #hero-banner {
+            width: 100%;
+            height: 400px; /* Large height as requested */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(0, 77, 153, 0.2), transparent);
+            border-bottom: 1px solid var(--glass-border);
+            text-align: center;
+            padding: 40px;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #hero-banner img {
+            max-height: 280px;
+            width: auto;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero-title-large {
+            font-size: 5rem;
+            font-weight: 900;
+            margin-top: 10px;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Settings Button */
+        .settings-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Formatting & Loader */
+        .message strong { color: var(--accent); }
+        .message ul { margin-left: 20px; }
+
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+        }
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-dim);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        h1, .hero-title-large {
+            background-clip: text;
+            -webkit-background-clip: text;
+        }
+
+        /* Hide banner when chat starts */
+        .chat-active #hero-banner {
+            height: 0;
+            padding: 0;
+            opacity: 0;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Banner at the top for maximum visibility -->
+        <div id="hero-banner">
+            <img src="banner.png" alt="Carga banner.png en la carpeta" id="mascot-img-display" onerror="this.src='https://via.placeholder.com/400x300?text=Guarda+la+foto+como+banner.png'">
+            <h1 class="hero-title-large">TOJUCHATS</h1>
+            <p style="color: var(--text-dim); margin-top: -10px; margin-bottom: 20px;">Tu consultor de confianza de Adeslas</p>
+        </div>
+
+        <header>
+            <div class="logo-container">
+                <div class="logo-icon">T</div>
+                <div>
+                    <h1>TOJUCHATS</h1>
+                    <p style="font-size: 0.75rem; color: var(--text-dim);">Asistente de Documentación Corporativa</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="status">
+                    <div class="status-dot"></div>
+                    <span id="status-text">Base de datos cargada: <span id="doc-count">0</span> documentos</span>
+                </div>
+                <div class="settings-btn" onclick="toggleSettings()" title="Configuración de API">
+                    ⚙️
+                </div>
+                <input type="password" id="api-key" placeholder="Pega tu Google API Key aquí..." 
+                       style="position: absolute; right: 80px; top: 24px; width: 0; padding: 0; border: none; overflow: hidden; transition: 0.3s; background: #000;">
+            </div>
+        </header>
+
+        <main id="chat-window">
+            <div class="message bot">
+                ¡Hola! Soy <strong>TOJUCHATS</strong>. Puedo ayudarte con cualquier duda sobre los cuadros médicos, IPID, cuestionarios de salud o tutoriales de Adeslas.
+                <br><br>
+                ¿En qué puedo ayudarte hoy?
+            </div>
+        </main>
+
+        <footer>
+            <input type="text" id="user-input" placeholder="Pregunta sobre coberturas, copagos, provincias..." autofocus>
+            <button id="send-btn">
+                <span>Enviar</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const docCountEl = document.getElementById('doc-count');
+        const apiKeyInput = document.getElementById('api-key');
+
+        // Initialization
+        window.onload = () => {
+            if (typeof PDF_DATA !== 'undefined') {
+                docCountEl.innerText = PDF_DATA.length;
+            }
+            
+            const savedKey = localStorage.getItem('google_api_key');
+            if (savedKey) apiKeyInput.value = savedKey;
+        };
+
+        function toggleSettings() {
+            if (apiKeyInput.style.width === '300px') {
+                apiKeyInput.style.width = '0';
+                apiKeyInput.style.padding = '0';
+                localStorage.setItem('google_api_key', apiKeyInput.value);
+            } else {
+                apiKeyInput.style.width = '300px';
+                apiKeyInput.style.padding = '14px 20px';
+                apiKeyInput.style.border = '1px solid var(--glass-border)';
+            }
+        }
+
+        function addMessage(text, side, source = null, sourcePath = null) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${side}`;
+            
+            if (side === 'bot') {
+                const avatar = document.createElement('div');
+                avatar.className = 'bot-avatar';
+                avatar.innerText = 'T';
+                msgDiv.appendChild(avatar);
+            }
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'msg-content';
+
+            // Premium Formatting
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--accent); font-weight: 700; border-bottom: 1px solid rgba(0, 194, 255, 0.2);">$1</strong>') // Bold with underline accent
+                .replace(/^[*•] (.*)/gm, '<div style="background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px; margin: 10px 0; border-left: 3px solid var(--accent);">$1</div>') // Card-style list
+                .replace(/(\d{3} \d{3} \d{3})/g, '<span style="color: var(--accent); font-weight: 600; text-decoration: underline;">$1</span>') // Style phone numbers
+                .replace(/\n/g, '<br>');
+            
+            contentDiv.innerHTML = formattedText;
+            msgDiv.appendChild(contentDiv);
+            
+            if (source && sourcePath) {
+                const srcLink = document.createElement('a');
+                srcLink.className = 'source-tag';
+                srcLink.href = sourcePath;
+                srcLink.target = '_blank';
+                srcLink.style.marginTop = '15px';
+                srcLink.innerText = `📄 Fuente Oficial: ${source}`;
+                msgDiv.appendChild(srcLink);
+            }
+            
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return msgDiv;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.className = 'message bot typing-bubble';
+            div.innerHTML = '<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+            return div;
+        }
+
+        // Logic to search documents
+        function searchDocs(query) {
+            const terms = query.toLowerCase().split(' ').filter(t => t.length > 2);
+            if (terms.length === 0) return null;
+
+            let bestMatch = null;
+            let maxScore = 0;
+            let bestSnippet = "";
+
+            PDF_DATA.forEach(doc => {
+                let score = 0;
+                const contentLower = doc.content.toLowerCase();
+                const titleLower = doc.title.toLowerCase();
+
+                // 1. High Score for Title Matches
+                let titleMatches = 0;
+                terms.forEach(term => {
+                    if (titleLower.includes(term)) {
+                        score += 50; // High reward for title inclusion
+                        titleMatches++;
+                    }
+                });
+                
+                // Extra bonus for matching multiple title terms (like "Pymes" + "Total")
+                if (titleMatches > 1) score += 100;
+
+                // 2. Score for Content Matches
+                terms.forEach(term => {
+                    const matches = contentLower.match(new RegExp(term, 'g'));
+                    if (matches) score += matches.length;
+                });
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestMatch = doc;
+                    
+                    // 3. Find Best Snippet (the window with most match terms)
+                    let snippet = doc.content.substring(0, 800);
+                    let bestWinScore = 0;
+                    const windowSize = 400;
+                    
+                    for (let i = 0; i < doc.content.length - windowSize; i += 100) {
+                        const win = doc.content.substring(i, i + windowSize).toLowerCase();
+                        let winScore = 0;
+                        terms.forEach(t => { if(win.includes(t)) winScore++; });
+                        if (winScore > bestWinScore) {
+                            bestWinScore = winScore;
+                            snippet = doc.content.substring(i, i + windowSize);
+                        }
+                    }
+                    bestSnippet = snippet;
+                }
+            });
+
+            if (bestMatch) {
+                return { ...bestMatch, snippet: bestSnippet };
+            }
+            return null;
+        }
+
+        async function chatWithGemini(query, context) {
+            const key = apiKeyInput.value || localStorage.getItem('google_api_key');
+            if (!key) return null;
+
+            const prompt = `
+                Eres TOJUCHATIS, el asistente experto en seguros de Adeslas.
+                Tu tarea es responder preguntas usando ÚNICAMENTE el contexto proporcionado.
+                Si no encuentras la información, dilo amablemente.
+                
+                CONTEXTO:
+                Documento: ${context.title}
+                Contenido relevante: ${context.content.substring(0, 3000)}
+                
+                PREGUNTA DEL USUARIO: ${query}
+                
+                Instrucciones:
+                1. Responde de forma profesional pero cercana.
+                2. Usa negritas para destacar datos importantes.
+                3. Si se mencionan importes o copagos, asegúrate de citarlos correctamente.
+                4. Cita siempre el documento fuente al final.
+            `;
+
+            const models = [
+                'gemini-3-flash-preview',
+                'gemini-2.0-flash-latest',
+                'gemini-1.5-flash-latest', 
+                'gemini-1.5-pro-latest'
+            ];
+            let firstErrorMsg = "";
+
+            for (let i = 0; i < models.length; i++) {
+                const model = models[i];
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            generationConfig: {
+                                temperature: 0,
+                                topP: 0.1,
+                                topK: 1
+                            }
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        return data.candidates[0].content.parts[0].text;
+                    } else {
+                        const msg = data.error?.message || `Error con ${model}`;
+                        if (i === 0) firstErrorMsg = msg;
+                        console.warn(`Falló ${model}:`, msg);
+                    }
+                } catch (e) {
+                    if (i === 0) firstErrorMsg = e.message;
+                    console.error(`Error de red con ${model}:`, e);
+                }
+            }
+
+            return `**Error de IA:** ${firstErrorMsg}. \n\n**Tip:** En tu cuenta he visto que tienes habilitado **Gemini 3 Flash Preview**. He añadido soporte para él. Prueba ahora.`;
+        }
+
+        async function handleSend() {
+            const queryRaw = userInput.value.trim();
+            if (!queryRaw) return;
+            const query = queryRaw.toLowerCase();
+
+            // Trigger banner collapse on first message to focus on chat
+            document.getElementById('app-container').classList.add('chat-active');
+            
+            addMessage(queryRaw, 'user');
+            userInput.value = '';
+
+            const typing = showTyping();
+
+            // 0. Handle greetings
+            const greetings = ['hola', 'buenos dias', 'buenas tardes', 'buenas noces', 'quien eres', 'ayuda'];
+            if (greetings.some(g => query.includes(g))) {
+                typing.remove();
+                addMessage("¡Hola! Soy **TOJUCHATIS**, tu asistente virtual para documentos de Adeslas. \n\nPuedes preguntarme por:\n- **Copagos**: ¿Cuánto cuesta una consulta?\n- **Cuadros Médicos**: ¿Hay dentista en Madrid?\n- **Coberturas**: ¿Qué incluye el seguro GO?\n\n¡Dime qué necesitas!", 'bot');
+                return;
+            }
+
+            // 1. Search relevant doc
+            const match = searchDocs(query);
+            
+            if (!match) {
+                typing.remove();
+                addMessage("Lo siento, no he encontrado información específica sobre eso. Intenta preguntar con palabras clave como 'Copagos', 'Dental', o el nombre de una provincia.", 'bot');
+                return;
+            }
+
+            // Quick handling for allergy vaccines specifically (common question)
+            if (query.includes('vacuna') && query.includes('alergia')) {
+                typing.remove();
+                addMessage("En Adeslas Pymes y Plena, los **tests de alergia están cubiertos**, pero las **vacunas de la alergia** suelen estar excluidas de la cobertura directa del seguro (se pagan aparte en farmacia), aunque su **administración** en el centro médico sí está incluida. \n\nHe encontrado el documento **" + match.title + "** que te puede dar más detalle.", 'bot', match.title, match.path);
+                return;
+            }
+
+            // 2. Try Gemini if Key exists, else return raw extract
+            const key = apiKeyInput.value || localStorage.getItem('google_api_key');
+            if (key) {
+                const aiResponse = await chatWithGemini(query, match);
+                typing.remove();
+                if (aiResponse) {
+                    addMessage(aiResponse, 'bot', match.title, match.path);
+                } else {
+                    addMessage("No he podido procesar la respuesta con IA, pero he encontrado algo relevante en el documento **" + match.title + "**: \n\n**Extracto:**\n" + match.snippet + "...", 'bot', match.title, match.path);
+                }
+            } else {
+                typing.remove();
+                addMessage("He encontrado información en el documento **" + match.title + "**. \n\nPara obtener una respuesta inteligente, por favor configura tu API Key en el icono de engranaje superior. \n\n**Información encontrada:**\n" + match.snippet + "...", 'bot', match.title, match.path);
+            }
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+    </script>
+</body>
+</html>
