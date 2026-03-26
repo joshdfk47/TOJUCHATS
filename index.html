@@ -642,7 +642,7 @@
     <!-- Security Gate -->
     <div id="gatekeeper">
         <div class="gate-card">
-            <div class="logo-icon" style="margin: 0 auto 20px auto; width: 60px; height: 60px;">T</div>
+            <img src="logo-adeslas.png" alt="Adeslas Logo" style="width: 280px; margin-bottom: 30px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.1));">
             <h2 style="margin-bottom: 10px;">ACCESO PRIVADO</h2>
             <p style="color: var(--text-dim);">Introduce el código de seguridad para utilizar TOJUCHATIS</p>
             <input type="password" id="gate-pass" class="gate-input" placeholder="••••••••••••••">
@@ -1081,8 +1081,9 @@ ${m.content}
 
 REGLAS DE RESPUESTA:
 1. Responde SOLO a lo que el usuario pregunta. No añadas información que no haya pedido.
-2. Analiza con cuidado los documentos "IPID" (Documento de información sobre producto) ya que contienen las REGLAS CRÍTICAS y EXCLUSIONES (ej: vacunas, psicólogos, etc.).
-3. Si el documento dice "serán por cuenta del asegurado", deja claro que NO están cubiertos.
+2. Analiza con EXTREMO CUIDADO los documentos "IPID" (Documento de información sobre producto). Estos documentos suelen tener dos secciones clave: "¿Qué se asegura?" y "¿Qué no está asegurado?". 
+3. IMPORTANTE: Para el producto **Adeslas GO**, recuerda que NO cubre hospitalización, ingresos ni cirugías (es un seguro ambulatorio). Si el documento dice que algo "precisa hospitalización" en la sección de "No está asegurado", indícalo claramente como NO CUBIERTO.
+4. Si el documento dice "serán por cuenta del asegurado", deja claro que NO están cubiertos.
 4. Estructura la respuesta de forma clara y bonita:
    - Usa **negrita** para datos importantes (precios, nombres de productos, límites).
    - Usa listas con viñetas para enumerar coberturas o características.
