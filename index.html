@@ -673,6 +673,9 @@
                     <span id="status-text">Base de datos cargada: <span id="doc-count">0</span> documentos</span>
                     <span class="memory-badge" id="memory-badge" style="display:none;">🧠 <span id="memory-count">0</span> msgs</span>
                 </div>
+                <a href="feedback.html" class="settings-btn" title="Feedback Plataforma" style="text-decoration: none; font-size: 1.2rem; width: auto; padding: 0 15px; display: flex; align-items: center; gap: 8px;">
+                    💬 <span style="font-size: 0.85rem; font-weight: 600;">Feedback Plataforma</span>
+                </a>
                 <a href="faq.html" class="settings-btn" title="Guía de Consultas" style="text-decoration: none; font-size: 1.2rem;">
                     📖
                 </a>
@@ -762,6 +765,7 @@
             'empresa': ['empresas', 'pymes', 'autónomo', 'autónomos', 'negocio', 'negocios', 'cif', 'nif'],
             'senior': ['seniors', 'mayor', 'mayores', 'tercera edad', 'jubilado'],
             'reembolso': ['rembolso', 'devolver', 'devolución', 'reintegro'],
+            'vacuna': ['vacunas', 'inyectable', 'vacunación', 'preventivo', 'exclusión', 'excluido', 'no cubre', 'por mi cuenta', 'pagar yo', 'ipid'],
         };
 
         function expandQuery(query) {
@@ -805,6 +809,12 @@
 
                 if (forcedDoc && titleLower.includes(forcedDoc.toLowerCase())) {
                     score += 10000;
+                }
+
+                // FEATURE Enhancement: Boost IPID documents for exclusion/critical queries
+                const isExclusionQuery = query.toLowerCase().includes('vacun') || query.toLowerCase().includes('no cub') || query.toLowerCase().includes('exclu') || query.toLowerCase().includes('paga');
+                if (isExclusionQuery && (titleLower.includes('ipid') || contentLower.includes('documento de información sobre producto'))) {
+                    score += 5000;
                 }
 
                 // Original terms get HIGHEST weight (exact match)
@@ -1071,15 +1081,17 @@ ${m.content}
 
 REGLAS DE RESPUESTA:
 1. Responde SOLO a lo que el usuario pregunta. No añadas información que no haya pedido.
-2. Estructura la respuesta de forma clara y bonita:
+2. Analiza con cuidado los documentos "IPID" (Documento de información sobre producto) ya que contienen las REGLAS CRÍTICAS y EXCLUSIONES (ej: vacunas, psicólogos, etc.).
+3. Si el documento dice "serán por cuenta del asegurado", deja claro que NO están cubiertos.
+4. Estructura la respuesta de forma clara y bonita:
    - Usa **negrita** para datos importantes (precios, nombres de productos, límites).
    - Usa listas con viñetas para enumerar coberturas o características.
    - Usa tablas markdown (| col1 | col2 |) para comparativas de precios o productos.
-3. Incluye TODOS los datos relevantes a la pregunta (precios, copagos, límites, carencias) sin omitir ninguno.
-4. Cita el nombre del documento fuente al final.
-5. Si el usuario hace una pregunta de SEGUIMIENTO, usa el historial para entender el contexto.
-6. Responde siempre en ESPAÑOL con un tono profesional y cercano.
-7. Si hay varios productos o planes, organízalos visualmente para que se vean claros de un vistazo.
+5. Incluye TODOS los datos relevantes a la pregunta (precios, copagos, límites, carencias) sin omitir ninguno.
+6. Cita el nombre del documento fuente al final.
+7. Si el usuario hace una pregunta de SEGUIMIENTO, usa el historial para entender el contexto.
+8. Responde siempre en ESPAÑOL con un tono profesional y cercano.
+9. Si hay varios productos o planes, organízalos visualmente para que se vean claros de un vistazo.
 ${historyCtx}
 
 DOCUMENTOS:
