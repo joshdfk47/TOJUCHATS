@@ -297,10 +297,10 @@
         ];
 
         // Access Logic (Gatekeeper)
-        const AUTH_KEY = 'qxzFcbZHYZOyo4nd';
+        const AUTH_KEY = 'adeslas2026';
         
         function checkAccess() {
-            const input = document.getElementById('gate-pass').value;
+            const input = document.getElementById('gate-pass').value.trim();
             const error = document.getElementById('gate-error');
             if (input === AUTH_KEY) {
                 localStorage.setItem('tojuchatis_token', btoa(AUTH_KEY)); // Simple obfuscation

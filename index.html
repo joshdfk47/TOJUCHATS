@@ -522,6 +522,7 @@
                     ⚙️
                 </div>
                 <input type="password" id="api-key" placeholder="Pega tu Google API Key aquí..." 
+                       oninput="localStorage.setItem('google_api_key', this.value)"
                        style="position: absolute; right: 80px; top: 24px; width: 0; padding: 0; border: none; overflow: hidden; transition: 0.3s; background: #000;">
             </div>
         </header>
@@ -546,10 +547,10 @@
         const apiKeyInput = document.getElementById('api-key');
 
         // Access Logic (Gatekeeper)
-        const AUTH_KEY = 'qxzFcbZHYZOyo4nd';
+        const AUTH_KEY = 'adeslas2026';
         
         function checkAccess() {
-            const input = document.getElementById('gate-pass').value;
+            const input = document.getElementById('gate-pass').value.trim();
             const error = document.getElementById('gate-error');
             if (input === AUTH_KEY) {
                 localStorage.setItem('tojuchatis_token', btoa(AUTH_KEY)); // Simple obfuscation
@@ -653,251 +654,161 @@
             return div;
         }
 
-        // Logic to search documents
-        function searchDocs(query, forcedDocTitle = null) {
-            const queryLower = query.toLowerCase();
-            const terms = queryLower.split(/\s+/).filter(t => t.length > 2);
-            if (terms.length === 0) return null;
-
-            // Intent identification: Is it about costs?
-            const isCostQuery = terms.some(t => ['cuánto', 'cuanto', 'cuesta', 'precio', 'pago', 'copago', 'coste', 'import', 'valoro', 'tarifa', 'casa', 'domicilio', 'abonar'].some(k => t.includes(k)));
+        function searchDocs(query, forcedDoc = null) {
+            if (!query) return null;
+            const terms = query.toLowerCase().split(' ').filter(t => t.length > 2);
+            const isCostQuery = query.includes('cuanto') || query.includes('cuánto') || query.includes('precio') || query.includes('copago') || query.includes('tarifa') || query.includes('importe') || query.includes('cuesta');
             
-            // Priority for forced document from FAQ
-            if (forcedDocTitle) {
-                const exactMatch = PDF_DATA.find(d => d.title.toLowerCase() === forcedDocTitle.toLowerCase());
-                if (exactMatch) {
-                    let bestSnippet = "";
-                    let maxWinScore = 0;
-                    const windowSize = 4000;
-                    
-                    for (let i = 0; i < exactMatch.content.length - windowSize; i += 400) {
-                        const win = exactMatch.content.substring(i, i + windowSize).toLowerCase();
-                        let score = 0;
-                        terms.forEach(t => { if(win.includes(t)) score++; });
-                        
-                        // Si es query de costes, dar peso extra si la ventana tiene € o terminos de precio
-                        if (isCostQuery && (win.includes('€') || win.includes('copago') || win.includes('precio'))) {
-                            score += 5;
-                        }
-
-                        if (score > maxWinScore) {
-                            maxWinScore = score;
-                            bestSnippet = exactMatch.content.substring(i, i + windowSize);
-                        }
-                    }
-
-                    // FALLBACK: If the forced document doesn't seem to have the answer (low score)
-                    // and it's a cost query, try global search to find the REAL answer
-                    if (isCostQuery && maxWinScore < 3) {
-                         const globalBest = searchDocs(query, null);
-                         if (globalBest && globalBest.score > 20) return globalBest;
-                    }
-
-                    if (!bestSnippet) bestSnippet = exactMatch.content.substring(0, 4000);
-                    return { ...exactMatch, snippet: bestSnippet, score: maxWinScore };
-                }
-            }
-
-            // Intent recognition
-            const isLocationQuery = terms.some(t => ['donde', 'dónde', 'provincia', 'ciudad', 'oficina', 'cuadro', 'médico'].some(k => t.includes(k)));
-
-            let bestMatch = null;
-            let maxScore = 0;
-            let bestSnippet = "";
-
+            let matches = [];
+            
             PDF_DATA.forEach(doc => {
                 let score = 0;
                 const contentLower = doc.content.toLowerCase();
                 const titleLower = doc.title.toLowerCase();
 
-                // 1. High Score for Title Matches (Fuzzy)
-                let titleMatches = 0;
-                terms.forEach(term => {
-                    if (titleLower.includes(term)) {
-                        score += 100; 
-                        titleMatches++;
-                    } else {
-                        // Partial title match (coincidencias)
-                        if (term.length > 4 && titleLower.includes(term.substring(0, 4))) {
-                            score += 30;
-                        }
-                    }
-                });
-                
-                if (titleMatches > 1) score += 200;
-
-                // 2. Score for Content Matches
-                terms.forEach(term => {
-                    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-                    const matches = contentLower.match(regex);
-                    if (matches) score += matches.length;
-                });
-
-                // 3. INTENT BOOSTS
-                if (isCostQuery) {
-                    const costBoosters = ['copago', 'tarifa', 'precio', 'importe', 'cuánto', 'cuesta'];
-                    if (costBoosters.some(b => titleLower.includes(b))) {
-                        score += 3000; // Boost masivo para docs de precios
-                    }
-                    if (titleLower.includes('cuadro médico') || titleLower.includes('cuadro de servicios')) {
-                        score -= 5000; // Penalización masiva: los cuadros médicos casi nunca tienen precios
-                    }
-                    // Bonus si el contenido tiene el símbolo €
-                    if (contentLower.includes('€')) score += 500;
+                if (forcedDoc && titleLower.includes(forcedDoc.toLowerCase())) {
+                    score += 10000;
                 }
 
-                if (isLocationQuery) {
-                    if (titleLower.includes('cuadro médico') || titleLower.includes('provincia') || titleLower.includes('guía')) {
-                        score += 2000;
+                terms.forEach(term => {
+                    if (titleLower.includes(term)) score += 500;
+                });
+
+                terms.forEach(term => {
+                    if (contentLower.includes(term)) {
+                        const count = contentLower.split(term).length - 1;
+                        score += count * 5; 
                     }
+                });
+
+                if (isCostQuery && (titleLower.includes('copago') || titleLower.includes('tarifa') || titleLower.includes('precio'))) {
+                    score += 3000;
                 }
 
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestMatch = doc;
-                    
-                    // 4. Fragmento Contextual
-                    let snippet = doc.content.substring(0, 4000);
-                    let bestWinScore = 0;
-                    const windowSize = 4000;
-                    
-                    for (let i = 0; i < doc.content.length - windowSize; i += 500) {
-                        const win = doc.content.substring(i, i + windowSize).toLowerCase();
-                        let winScore = 0;
-                        terms.forEach(t => { if(win.includes(t)) winScore++; });
-                        
-                        if (winScore > bestWinScore) {
-                            bestWinScore = winScore;
-                            snippet = doc.content.substring(i, i + windowSize);
-                        }
-                    }
-                    bestSnippet = snippet;
+                if (score > 20) {
+                    // Limitar el contenido para no saturar la API (máximo 12000 carácteres por documento)
+                    const snippet = doc.content.length > 12000 ? doc.content.substring(0, 12000) + "..." : doc.content;
+                    matches.push({ ...doc, content: snippet, score });
                 }
             });
 
-            if (bestMatch) {
-                return { ...bestMatch, snippet: bestSnippet, score: maxScore };
-            }
-            return null;
+            matches.sort((a, b) => b.score - a.score);
+            return matches.slice(0, 5); 
         }
 
-        async function chatWithGemini(query, context) {
-            const key = apiKeyInput.value || localStorage.getItem('google_api_key');
+        let lastAiError = ""; // Global variable to store last API error
+
+        async function chatWithGemini(query, matches) {
+            const key = apiKeyInput.value.trim() || localStorage.getItem('google_api_key');
             if (!key) return null;
+            lastAiError = "";
+
+            let contextStr = matches.map((m, idx) => `
+### FUENTE #${idx+1}: ${m.title}
+CONTENIDO:
+${m.content}
+`).join("\n\n");
 
             const prompt = `
-                Eres TOJUCHATIS, el asistente experto en seguros de Adeslas. 
-                Eres conocido por tu precisión extrema y tu capacidad para encontrar detalles escondidos en los documentos.
+                Eres TOJUCHATIS, el asistente EXPERTO de Adeslas. 
+                Recibes fragmentos de múltiples páginas y documentos. Tu misión es unificar la información para responder con PRECISIÓN ABSOLUTA.
                 
-                Instrucciones Críticas:
-                1. Responde ÚNICAMENTE basándote en el CONTEXTO proporcionado abajo.
-                2. Si el contexto menciona importes, límites, porcentajes de copago o tarifas, DEBES incluirlos. No digas que no tienes la información si aparece en el texto. Se exhaustivo.
-                3. Si el contexto es ambiguo, explica lo que sí has encontrado con claridad.
-                4. Usa un tono cercano, profesional y tranquilizador.
-                5. Destaca datos clave (precios, centros, coberturas) en **negrita**.
-                6. Cita siempre el nombre del documento al final de tu respuesta.
-
-                DATO DEL DOCUMENTO: ${context.title}
-                FRAGMENTO RELEVANTE PARA ESTUDIAR:
+                Instrucciones:
+                1. Analiza el contexto de TODAS las fuentes proporcionadas.
+                2. Si el usuario pregunta por comparativas (ej: Plena vs Plena Vital), usa los datos de ambos documentos proporcionados.
+                3. Da respuestas COMPLETAS. Si hay precios, copagos o límites, DEBES listarlos.
+                4. Menciona siempre el nombre del documento oficial en tu respuesta.
+                
+                CONTEXTO:
                 """
-                ${context.snippet || context.content.substring(0, 4000)}
+                ${contextStr}
                 """
                 
-                PREGUNTA DEL USUARIO: ${query}
+                PREGUNTA: ${query}
             `;
 
-            const models = [
-                'gemini-3-flash-preview',
-                'gemini-2.0-flash-latest',
-                'gemini-1.5-flash-latest', 
-                'gemini-1.5-pro-latest'
-            ];
-            let firstErrorMsg = "";
+            let bestModel = null;
+            const apiVersions = ['v1beta', 'v1'];
 
-            for (let i = 0; i < models.length; i++) {
-                const model = models[i];
+            for (const version of apiVersions) {
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: {
-                                temperature: 0,
-                                topP: 0.1,
-                                topK: 1
+                    const listResp = await fetch(`https://generativelanguage.googleapis.com/${version}/models?key=${key}`);
+                    if (listResp.ok) {
+                        const listData = await listResp.json();
+                        if (listData.models) {
+                            const preferred = ['3.1-pro', '3.1-flash', '3.0-pro', '3.0-flash', '2.0-pro', '2.0-flash', '1.5-pro', '1.5-flash', 'gemini-pro'];
+                            for (const p of preferred) {
+                                const found = listData.models.find(m => m.name.toLowerCase().includes(p.toLowerCase()) && m.supportedGenerationMethods.includes('generateContent'));
+                                if (found) {
+                                    bestModel = found.name.split('/').pop();
+                                    break;
+                                }
                             }
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        return data.candidates[0].content.parts[0].text;
-                    } else {
-                        const msg = data.error?.message || `Error con ${model}`;
-                        if (i === 0) firstErrorMsg = msg;
-                        console.warn(`Falló ${model}:`, msg);
+                        }
                     }
-                } catch (e) {
-                    if (i === 0) firstErrorMsg = e.message;
-                    console.error(`Error de red con ${model}:`, e);
-                }
+                    if (bestModel) {
+                        const resp = await fetch(`https://generativelanguage.googleapis.com/${version}/models/${bestModel}:generateContent?key=${key}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0 } })
+                        });
+                        const data = await resp.json();
+                        if (resp.ok && data.candidates) return data.candidates[0].content.parts[0].text;
+                    }
+                } catch (e) { console.error("Auto-discovery failed:", e); }
             }
 
-            return `**Error de IA:** ${firstErrorMsg}. \n\n**Tip:** En tu cuenta he visto que tienes habilitado **Gemini 3 Flash Preview**. He añadido soporte para él. Prueba ahora.`;
+            // Simple fallback
+            try {
+                const fallback = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0 } })
+                });
+                const data = await fallback.json();
+                if (fallback.ok && data.candidates) return data.candidates[0].content.parts[0].text;
+            } catch (e) {}
+
+            return null;
         }
 
         async function handleSend(forcedDoc = null) {
             const queryRaw = userInput.value.trim();
             if (!queryRaw) return;
             const query = queryRaw.toLowerCase();
-
-            // Trigger banner collapse on first message to focus on chat
-            document.getElementById('app-container').classList.add('chat-active');
             
+            document.getElementById('app-container').classList.add('chat-active');
             addMessage(queryRaw, 'user');
             userInput.value = '';
-
             const typing = showTyping();
 
-            // 0. Handle greetings
-            const greetings = ['hola', 'buenos dias', 'buenas tardes', 'buenas noces', 'quien eres', 'ayuda'];
-            if (greetings.some(g => query.includes(g)) && !forcedDoc) {
-                typing.remove();
-                addMessage("¡Hola! Soy **TOJUCHATIS**, tu asistente virtual para documentos de Adeslas. \n\nPuedes preguntarme por:\n- **Copagos**: ¿Cuánto cuesta una consulta?\n- **Cuadros Médicos**: ¿Hay dentista en Madrid?\n- **Coberturas**: ¿Qué incluye el seguro GO?\n\n¡Dime qué necesitas!", 'bot');
-                return;
-            }
-
-            // 1. Search relevant doc
-            const match = searchDocs(query, forcedDoc);
-            
-            if (!match) {
-                typing.remove();
-                addMessage("Lo siento, no he encontrado información específica sobre eso. Intenta preguntar con palabras clave como 'Copagos', 'Dental', o el nombre de una provincia.", 'bot');
-                return;
-            }
-
-            // Quick handling for allergy vaccines specifically (common question)
-            if (query.includes('vacuna') && query.includes('alergia')) {
-                typing.remove();
-                addMessage("En Adeslas Pymes y Plena, los **tests de alergia están cubiertos**, pero las **vacunas de la alergia** suelen estar excluidas de la cobertura directa del seguro (se pagan aparte en farmacia), aunque su **administración** en el centro médico sí está incluida. \n\nHe encontrado el documento **" + match.title + "** que te puede dar más detalle.", 'bot', match.title, match.path);
-                return;
-            }
-
-            // 2. MANDATORY: Try Gemini if Key exists, else Block
+            // 1. Mandatory IA Key check
             const key = apiKeyInput.value || localStorage.getItem('google_api_key');
-            if (key) {
-                const aiResponse = await chatWithGemini(query, match);
+            if (!key) {
                 typing.remove();
-                if (aiResponse) {
-                    addMessage(aiResponse, 'bot', match.title, match.path);
-                } else {
-                    addMessage("Lo siento, no he podido procesar la consulta con la inteligencia artificial en este momento. Por favor, verifica tu conexión o API Key.", 'bot');
-                }
+                addMessage("🚫 **Sistema en pausa.** Introduce tu API Key en ajustes ⚙️ para usar la inteligencia de Adeslas.", 'bot');
+                return;
+            }
+
+            // 2. Search matches (Top 5 fragments)
+            const matches = searchDocs(query, forcedDoc);
+            if (!matches || matches.length === 0) {
+                typing.remove();
+                addMessage("No he encontrado información específica en los documentos sobre eso. Intenta con palabras clave como 'Copagos', 'Dental' o 'Cuadro Médico'.", 'bot');
+                return;
+            }
+
+            // 3. AI Response based on Multiple Fragments
+            const aiResponse = await chatWithGemini(query, matches);
+            typing.remove();
+            if (aiResponse) {
+                addMessage(aiResponse, 'bot', matches[0].title, matches[0].path);
             } else {
-                typing.remove();
-                addMessage("🚫 **Sistema IA en pausa.** Para recibir respuestas expertas basadas en los 218 documentos de Adeslas, por favor introduce tu **API Key de Google Gemini** en el icono de ajustes (⚙️) arriba a la derecha.", 'bot');
+                let errorHelp = lastAiError ? `\n\n**Detalles técnicos:** ${lastAiError}` : "";
+                if (lastAiError.includes("API key not valid") || lastAiError.includes("403") || lastAiError.includes("401")) {
+                    errorHelp += "\n\n⚠️ **Parece que hay un problema con tu clave.** Verifica que has copiado la clave completa de Google AI Studio y que tienes activado el pago (si usas límites) o que es una clave activa.";
+                }
+                addMessage("Lo siento, no he podido conectar con la Inteligencia Artificial." + errorHelp, 'bot');
             }
         }
 
@@ -918,10 +829,9 @@
             
             if (q) {
                 userInput.value = q;
-                handleSend(doc); // Pasamos el documento forzado
+                handleSend(doc); 
             } else {
-                // Solo si no venimos del FAQ mostramos el saludo inicial
-                addMessage("¡Hola! Soy **TOJUCHATIS**. Puedo ayudarte con dudas sobre copagos, cuadros médicos o coberturas de Adeslas. \n\n¿Qué deseas consultar hoy?", 'bot');
+                addMessage("¡Hola! Soy **Adeslas AI**. Puedo ayudarte con dudas sobre copagos, cuadros médicos o coberturas de Adeslas utilizando los 218 documentos oficiales. \n\n¿Qué deseas consultar hoy?", 'bot');
             }
         });
 
@@ -935,3 +845,4 @@
     </script>
 </body>
 </html>
+
