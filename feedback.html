@@ -302,47 +302,61 @@
             submitBtn.disabled = true;
             submitBtn.querySelector('span').innerText = 'Enviando...';
 
-            // 1. Save to LocalStorage
-            const history = JSON.parse(localStorage.getItem('tojuchatis_feedback') || '[]');
             const newItem = {
                 type,
                 description,
                 user,
                 date: new Date().toLocaleString('es-ES')
             };
+
+            // 1. Guardar en LocalStorage (siempre se guarda localmente)
+            const history = JSON.parse(localStorage.getItem('tojuchatis_feedback') || '[]');
             history.push(newItem);
             localStorage.setItem('tojuchatis_feedback', JSON.stringify(history));
 
-            // 2. Mock Email Sending (Since we don't have a real backend, we use a simulation or Formspree)
-            // For a REAL email to ayuso@startend.es, we can use Formspree or EmailJS.
-            // Using Formspree is the easiest "no-code" way:
+            // 2. Intento de envío vía Formspree (Requiere VERIFICACIÓN la primera vez)
             try {
-                const response = await fetch('https://formspree.io/f/ayuso@startend.es', {
+                const response = await fetch('https://formspree.io/ayuso@startend.es', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({
-                        subject: `NUEVO FEEDBACK: ${type}`,
-                        from_name: user,
-                        message: description,
-                        date: newItem.date,
-                        _replyto: 'ayuso@startend.es' // This is where success redirects or similar
+                        subject: `[FEEDBACK] ${type} - ${user}`,
+                        tipo: type,
+                        usuario: user,
+                        detalles: description,
+                        enviado_el: newItem.date
                     })
                 });
 
-                // Since we don't have a Formspree ID, this will fail unless they have one.
-                // I'll simulate success for the UI but warn if it's a mock.
-                
-                showToast("Feedback enviado correctamente a ayuso@startend.es");
-                form.reset();
-                loadHistory();
+                if (response.ok) {
+                    showToast("¡Enviado! Revisa tu email (incluido SPAM) para VERIFICAR este envío si es la primera vez.");
+                    form.reset();
+                } else {
+                    throw new Error("Formspree Error");
+                }
             } catch (err) {
-                // FALLBACK: If formspree fails without an ID, we still show success in the UI for the user's peace of mind
-                // but in a real scenario they'd need a backend.
-                showToast("Enviado y guardado en historial.");
-                form.reset();
-                loadHistory();
+                // FALLBACK: Si falla el envío automático, ofrecemos el enlace mailto
+                showToast("Fallo en envío automático. Intenta el botón de envío manual.", 'error');
+                
+                // Creamos un botón de fallback que aparece si falla el fetch
+                if (!document.getElementById('manual-btn')) {
+                    const mailtoLink = `mailto:ayuso@startend.es?subject=Feedback TOJUCHATS: ${type}&body=Tipo: ${type}%0D%0AUsuario: ${user}%0D%0A%0D%0ADescripción: ${description}`;
+                    const manualBtn = document.createElement('a');
+                    manualBtn.id = 'manual-btn';
+                    manualBtn.href = mailtoLink;
+                    manualBtn.className = 'btn-submit';
+                    manualBtn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                    manualBtn.style.marginTop = '20px';
+                    manualBtn.style.textDecoration = 'none';
+                    manualBtn.innerHTML = '✉️ Reintentar Envío Manual';
+                    form.appendChild(manualBtn);
+                }
             }
 
+            loadHistory();
             submitBtn.disabled = false;
             submitBtn.querySelector('span').innerText = 'Enviar Feedback';
         });
