@@ -28,17 +28,19 @@
         body {
             background: radial-gradient(circle at top right, #1e293b, #0f172a);
             color: var(--text-main);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            align-items: flex-start; /* Start from top */
+            overflow-y: auto; /* Page scrollbar */
+            padding: 40px 0;
         }
 
         #app-container {
             width: 95%;
             max-width: 1200px;
-            height: 90vh;
+            height: auto; /* Growth with content */
+            min-height: 95vh;
             background: var(--glass);
             backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
@@ -47,15 +49,23 @@
             flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             position: relative;
+            margin-bottom: 20px;
         }
 
         /* Header */
         header {
-            padding: 24px 32px;
+            padding: 18px 32px;
             border-bottom: 1px solid var(--glass-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
         }
 
         .logo-container {
@@ -117,13 +127,11 @@
         /* Chat Area */
         #chat-window {
             flex: 1;
-            overflow-y: auto;
+            overflow: visible; /* No internal scrollbar */
             padding: 32px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--glass-border) transparent;
         }
 
         #chat-window::-webkit-scrollbar {
@@ -145,6 +153,9 @@
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             color: var(--text-main);
             margin-bottom: 24px;
+            scroll-margin-top: 100px; /* Suficiente espacio para que no quede debajo del header sticky */
+            overflow: visible !important;
+            height: auto !important;
         }
 
         .message.bot {
@@ -201,12 +212,18 @@
 
         /* Input Area */
         footer {
-            padding: 24px 32px;
+            padding: 18px 32px;
             border-top: 1px solid var(--glass-border);
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.9); /* More opaque for readability when scrolling */
+            backdrop-filter: blur(10px);
             display: flex;
             gap: 16px;
             align-items: center;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
         }
 
         input {
@@ -253,36 +270,58 @@
         /* Hero Banner Styles */
         #hero-banner {
             width: 100%;
-            height: 400px; /* Large height as requested */
+            height: 380px; 
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: center; 
             align-items: center;
             background: linear-gradient(180deg, rgba(0, 77, 153, 0.2), transparent);
             border-bottom: 1px solid var(--glass-border);
             text-align: center;
-            padding: 40px;
+            padding: 100px 40px 60px 40px; /* Mas espacio abajo (60px) para que el subtitulo no sea tapado por el header sticky */
             transition: all 0.5s ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible; 
+            margin-bottom: 20px; /* Separación extra para que el header empiece más abajo */
         }
 
         #hero-banner img {
-            max-height: 280px;
+            max-height: 220px; /* 'Middle ground' size as requested */
             width: auto;
             filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5));
             animation: float 6s ease-in-out infinite;
+            margin-bottom: 0px;
+            z-index: 10;
         }
 
         .hero-title-large {
-            font-size: 5rem;
+            font-size: 4rem; /* Smaller title to fit all */
             font-weight: 900;
-            margin-top: 10px;
+            margin-top: 5px;
             letter-spacing: -2px;
             background: linear-gradient(135deg, #fff, var(--accent));
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
             text-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.5s ease;
+        }
+
+        /* Dynamic states for "At a glance" visibility */
+        .chat-active #hero-banner {
+            height: 160px;
+            padding: 20px;
+        }
+        .chat-active #hero-banner img {
+            max-height: 80px;
+        }
+        .chat-active .hero-title-large {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .chat-active #hero-banner p {
+            display: none;
         }
 
         @keyframes float {
@@ -344,6 +383,52 @@
             padding: 0;
             opacity: 0;
             border: none;
+            overflow: hidden;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body { 
+                align-items: flex-start; 
+                padding: 0;
+            }
+            #app-container {
+                width: 100%;
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+            }
+            header {
+                padding: 16px;
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            .hero-title-large {
+                font-size: 3rem;
+            }
+            #hero-banner {
+                height: 350px;
+            }
+            #hero-banner img {
+                max-height: 180px;
+            }
+            .message {
+                max-width: 95%;
+                padding: 16px;
+                font-size: 0.95rem;
+            }
+            footer {
+                padding: 16px;
+            }
+            input#api-key {
+                top: auto;
+                bottom: 80px;
+                right: 20px;
+            }
+            .status {
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -354,7 +439,7 @@
         <div id="hero-banner">
             <img src="banner.png" alt="Carga banner.png en la carpeta" id="mascot-img-display" onerror="this.src='https://via.placeholder.com/400x300?text=Guarda+la+foto+como+banner.png'">
             <h1 class="hero-title-large">TOJUCHATS</h1>
-            <p style="color: var(--text-dim); margin-top: -10px; margin-bottom: 20px;">Tu consultor de confianza de Adeslas</p>
+            <p style="color: var(--text-dim); margin-top: 5px; margin-bottom: 30px; font-weight: 500;">Tu consultor de confianza de Adeslas</p>
         </div>
 
         <header>
@@ -370,6 +455,9 @@
                     <div class="status-dot"></div>
                     <span id="status-text">Base de datos cargada: <span id="doc-count">0</span> documentos</span>
                 </div>
+                <a href="faq.html" class="settings-btn" title="Guía de Consultas" style="text-decoration: none; font-size: 1.2rem;">
+                    📖
+                </a>
                 <div class="settings-btn" onclick="toggleSettings()" title="Configuración de API">
                     ⚙️
                 </div>
@@ -379,11 +467,6 @@
         </header>
 
         <main id="chat-window">
-            <div class="message bot">
-                ¡Hola! Soy <strong>TOJUCHATS</strong>. Puedo ayudarte con cualquier duda sobre los cuadros médicos, IPID, cuestionarios de salud o tutoriales de Adeslas.
-                <br><br>
-                ¿En qué puedo ayudarte hoy?
-            </div>
         </main>
 
         <footer>
@@ -402,16 +485,7 @@
         const docCountEl = document.getElementById('doc-count');
         const apiKeyInput = document.getElementById('api-key');
 
-        // Initialization
-        window.onload = () => {
-            if (typeof PDF_DATA !== 'undefined') {
-                docCountEl.innerText = PDF_DATA.length;
-            }
-            
-            const savedKey = localStorage.getItem('google_api_key');
-            if (savedKey) apiKeyInput.value = savedKey;
-        };
-
+        // Final Cleanup: We use the listener at the end of the script for initialization
         function toggleSettings() {
             if (apiKeyInput.style.width === '300px') {
                 apiKeyInput.style.width = '0';
@@ -438,11 +512,13 @@
             const contentDiv = document.createElement('div');
             contentDiv.className = 'msg-content';
 
-            // Premium Formatting
+            // Premium Formatting (Enhanced)
             let formattedText = text
+                .replace(/\* \*\*(.*?)\*\*/g, '<li><strong>$1</strong>') // Style bullet points
                 .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--accent); font-weight: 700; border-bottom: 1px solid rgba(0, 194, 255, 0.2);">$1</strong>') // Bold with underline accent
                 .replace(/^[*•] (.*)/gm, '<div style="background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 12px; margin: 10px 0; border-left: 3px solid var(--accent);">$1</div>') // Card-style list
                 .replace(/(\d{3} \d{3} \d{3})/g, '<span style="color: var(--accent); font-weight: 600; text-decoration: underline;">$1</span>') // Style phone numbers
+                .replace(/\n\n/g, '<br><br>')
                 .replace(/\n/g, '<br>');
             
             contentDiv.innerHTML = formattedText;
@@ -459,7 +535,18 @@
             }
             
             chatWindow.appendChild(msgDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            
+            // Scroll logic: User wants to see the START of the message if bot, or regular scroll if user
+            if (side === 'bot' || side === 'ai') {
+                setTimeout(() => {
+                    // Scroll de la página completa hasta el inicio del nuevo mensaje
+                    msgDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 150);
+            } else {
+                // Para el usuario, scroll hasta el final para ver lo que acaba de escribir
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+
             return msgDiv;
         }
 
@@ -468,14 +555,57 @@
             div.className = 'message bot typing-bubble';
             div.innerHTML = '<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
             chatWindow.appendChild(div);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
+            div.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return div;
         }
 
         // Logic to search documents
-        function searchDocs(query) {
-            const terms = query.toLowerCase().split(' ').filter(t => t.length > 2);
+        function searchDocs(query, forcedDocTitle = null) {
+            const queryLower = query.toLowerCase();
+            const terms = queryLower.split(/\s+/).filter(t => t.length > 2);
             if (terms.length === 0) return null;
+
+            // Intent identification: Is it about costs?
+            const isCostQuery = terms.some(t => ['cuánto', 'cuanto', 'cuesta', 'precio', 'pago', 'copago', 'coste', 'import', 'valoro', 'tarifa', 'casa', 'domicilio', 'abonar'].some(k => t.includes(k)));
+            
+            // Priority for forced document from FAQ
+            if (forcedDocTitle) {
+                const exactMatch = PDF_DATA.find(d => d.title.toLowerCase() === forcedDocTitle.toLowerCase());
+                if (exactMatch) {
+                    let bestSnippet = "";
+                    let maxWinScore = 0;
+                    const windowSize = 4000;
+                    
+                    for (let i = 0; i < exactMatch.content.length - windowSize; i += 400) {
+                        const win = exactMatch.content.substring(i, i + windowSize).toLowerCase();
+                        let score = 0;
+                        terms.forEach(t => { if(win.includes(t)) score++; });
+                        
+                        // Si es query de costes, dar peso extra si la ventana tiene € o terminos de precio
+                        if (isCostQuery && (win.includes('€') || win.includes('copago') || win.includes('precio'))) {
+                            score += 5;
+                        }
+
+                        if (score > maxWinScore) {
+                            maxWinScore = score;
+                            bestSnippet = exactMatch.content.substring(i, i + windowSize);
+                        }
+                    }
+
+                    // FALLBACK: If the forced document doesn't seem to have the answer (low score)
+                    // and it's a cost query, try global search to find the REAL answer
+                    if (isCostQuery && maxWinScore < 3) {
+                         const globalBest = searchDocs(query, null);
+                         if (globalBest && globalBest.score > 20) return globalBest;
+                    }
+
+                    if (!bestSnippet) bestSnippet = exactMatch.content.substring(0, 4000);
+                    return { ...exactMatch, snippet: bestSnippet, score: maxWinScore };
+                }
+            }
+
+            // Intent recognition
+            const isLocationQuery = terms.some(t => ['donde', 'dónde', 'provincia', 'ciudad', 'oficina', 'cuadro', 'médico'].some(k => t.includes(k)));
 
             let bestMatch = null;
             let maxScore = 0;
@@ -486,37 +616,62 @@
                 const contentLower = doc.content.toLowerCase();
                 const titleLower = doc.title.toLowerCase();
 
-                // 1. High Score for Title Matches
+                // 1. High Score for Title Matches (Fuzzy)
                 let titleMatches = 0;
                 terms.forEach(term => {
                     if (titleLower.includes(term)) {
-                        score += 50; // High reward for title inclusion
+                        score += 100; 
                         titleMatches++;
+                    } else {
+                        // Partial title match (coincidencias)
+                        if (term.length > 4 && titleLower.includes(term.substring(0, 4))) {
+                            score += 30;
+                        }
                     }
                 });
                 
-                // Extra bonus for matching multiple title terms (like "Pymes" + "Total")
-                if (titleMatches > 1) score += 100;
+                if (titleMatches > 1) score += 200;
 
                 // 2. Score for Content Matches
                 terms.forEach(term => {
-                    const matches = contentLower.match(new RegExp(term, 'g'));
+                    const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                    const matches = contentLower.match(regex);
                     if (matches) score += matches.length;
                 });
+
+                // 3. INTENT BOOSTS
+                if (isCostQuery) {
+                    const costBoosters = ['copago', 'tarifa', 'precio', 'importe', 'cuánto', 'cuesta'];
+                    if (costBoosters.some(b => titleLower.includes(b))) {
+                        score += 3000; // Boost masivo para docs de precios
+                    }
+                    if (titleLower.includes('cuadro médico') || titleLower.includes('cuadro de servicios')) {
+                        score -= 5000; // Penalización masiva: los cuadros médicos casi nunca tienen precios
+                    }
+                    // Bonus si el contenido tiene el símbolo €
+                    if (contentLower.includes('€')) score += 500;
+                }
+
+                if (isLocationQuery) {
+                    if (titleLower.includes('cuadro médico') || titleLower.includes('provincia') || titleLower.includes('guía')) {
+                        score += 2000;
+                    }
+                }
 
                 if (score > maxScore) {
                     maxScore = score;
                     bestMatch = doc;
                     
-                    // 3. Find Best Snippet (the window with most match terms)
-                    let snippet = doc.content.substring(0, 800);
+                    // 4. Fragmento Contextual
+                    let snippet = doc.content.substring(0, 4000);
                     let bestWinScore = 0;
-                    const windowSize = 400;
+                    const windowSize = 4000;
                     
-                    for (let i = 0; i < doc.content.length - windowSize; i += 100) {
+                    for (let i = 0; i < doc.content.length - windowSize; i += 500) {
                         const win = doc.content.substring(i, i + windowSize).toLowerCase();
                         let winScore = 0;
                         terms.forEach(t => { if(win.includes(t)) winScore++; });
+                        
                         if (winScore > bestWinScore) {
                             bestWinScore = winScore;
                             snippet = doc.content.substring(i, i + windowSize);
@@ -527,7 +682,7 @@
             });
 
             if (bestMatch) {
-                return { ...bestMatch, snippet: bestSnippet };
+                return { ...bestMatch, snippet: bestSnippet, score: maxScore };
             }
             return null;
         }
@@ -537,21 +692,24 @@
             if (!key) return null;
 
             const prompt = `
-                Eres TOJUCHATIS, el asistente experto en seguros de Adeslas.
-                Tu tarea es responder preguntas usando ÚNICAMENTE el contexto proporcionado.
-                Si no encuentras la información, dilo amablemente.
+                Eres TOJUCHATIS, el asistente experto en seguros de Adeslas. 
+                Eres conocido por tu precisión extrema y tu capacidad para encontrar detalles escondidos en los documentos.
                 
-                CONTEXTO:
-                Documento: ${context.title}
-                Contenido relevante: ${context.content.substring(0, 3000)}
+                Instrucciones Críticas:
+                1. Responde ÚNICAMENTE basándote en el CONTEXTO proporcionado abajo.
+                2. Si el contexto menciona importes, límites, porcentajes de copago o tarifas, DEBES incluirlos. No digas que no tienes la información si aparece en el texto. Se exhaustivo.
+                3. Si el contexto es ambiguo, explica lo que sí has encontrado con claridad.
+                4. Usa un tono cercano, profesional y tranquilizador.
+                5. Destaca datos clave (precios, centros, coberturas) en **negrita**.
+                6. Cita siempre el nombre del documento al final de tu respuesta.
+
+                DATO DEL DOCUMENTO: ${context.title}
+                FRAGMENTO RELEVANTE PARA ESTUDIAR:
+                """
+                ${context.snippet || context.content.substring(0, 4000)}
+                """
                 
                 PREGUNTA DEL USUARIO: ${query}
-                
-                Instrucciones:
-                1. Responde de forma profesional pero cercana.
-                2. Usa negritas para destacar datos importantes.
-                3. Si se mencionan importes o copagos, asegúrate de citarlos correctamente.
-                4. Cita siempre el documento fuente al final.
             `;
 
             const models = [
@@ -596,7 +754,7 @@
             return `**Error de IA:** ${firstErrorMsg}. \n\n**Tip:** En tu cuenta he visto que tienes habilitado **Gemini 3 Flash Preview**. He añadido soporte para él. Prueba ahora.`;
         }
 
-        async function handleSend() {
+        async function handleSend(forcedDoc = null) {
             const queryRaw = userInput.value.trim();
             if (!queryRaw) return;
             const query = queryRaw.toLowerCase();
@@ -611,14 +769,14 @@
 
             // 0. Handle greetings
             const greetings = ['hola', 'buenos dias', 'buenas tardes', 'buenas noces', 'quien eres', 'ayuda'];
-            if (greetings.some(g => query.includes(g))) {
+            if (greetings.some(g => query.includes(g)) && !forcedDoc) {
                 typing.remove();
                 addMessage("¡Hola! Soy **TOJUCHATIS**, tu asistente virtual para documentos de Adeslas. \n\nPuedes preguntarme por:\n- **Copagos**: ¿Cuánto cuesta una consulta?\n- **Cuadros Médicos**: ¿Hay dentista en Madrid?\n- **Coberturas**: ¿Qué incluye el seguro GO?\n\n¡Dime qué necesitas!", 'bot');
                 return;
             }
 
             // 1. Search relevant doc
-            const match = searchDocs(query);
+            const match = searchDocs(query, forcedDoc);
             
             if (!match) {
                 typing.remove();
@@ -649,7 +807,31 @@
             }
         }
 
-        sendBtn.addEventListener('click', handleSend);
+        // Auto-handle parameters from FAQ and perform One-time Init
+        window.addEventListener('load', () => {
+            // Document count
+            if (typeof PDF_DATA !== 'undefined' && docCountEl) {
+                docCountEl.innerText = PDF_DATA.length;
+            }
+            
+            // API Key
+            const savedKey = localStorage.getItem('google_api_key');
+            if (savedKey && apiKeyInput) apiKeyInput.value = savedKey;
+
+            const params = new URLSearchParams(window.location.search);
+            const q = params.get('q');
+            const doc = params.get('doc');
+            
+            if (q) {
+                userInput.value = q;
+                handleSend(doc); // Pasamos el documento forzado
+            } else {
+                // Solo si no venimos del FAQ mostramos el saludo inicial
+                addMessage("¡Hola! Soy **TOJUCHATIS**. Puedo ayudarte con dudas sobre copagos, cuadros médicos o coberturas de Adeslas. \n\n¿Qué deseas consultar hoy?", 'bot');
+            }
+        });
+
+        sendBtn.addEventListener('click', () => handleSend());
         userInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
